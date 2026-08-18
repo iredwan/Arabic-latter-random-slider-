@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>আরবি হরফ ভিউয়ার</title>
+    <style>
+        @font-face {
+            font-family: 'IqraArabicFont';
+            src: url('../assets/fonts/CustomFont.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #121212; /* ডার্ক ব্যাকগ্রাউন্ড, চাইলে পরিবর্তন করতে পারেন */
+            overflow: hidden;
+            font-family: 'IqraArabicFont', 'Arial', sans-serif;
+            user-select: none; /* লেখার টেক্সট সিলেক্ট হওয়া বন্ধ রাখার জন্য */
+            touch-action: pan-y; /* স্লাইড স্মুথ করার জন্য */
+        }
+
+        #letter-display {
+            font-size: 45vh; /* স্ক্রিনের মেপে হরফের সাইজ বড় হবে */
+            font-weight: bold;
+            transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+            text-align: center;
+            line-height: 1;
+        }
+
+        /* স্লাইড অ্যানিমেশন ক্লাস */
+        .slide-out-left {
+            transform: translateX(-100vw);
+            opacity: 0;
+        }
+
+        .slide-out-right {
+            transform: translateX(100vw);
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="letter-display"></div>
+
+    <script>
+        // কালার অনুযায়ী অক্ষর গুলোর লিস্ট
+        const colorGroups = [
+            {
+                color: '#4cb648',
+                letters: ['ج', 'ذ', 'ض', 'ص', 'ن', 'م', 'غ', 'ع', 'و', 'ش', 'س', 'د', 'ل', 'ك', 'ق']
+            },
+            {
+                color: '#60c9e6',
+                letters: ['ث', 'ت', 'ر', 'ه', 'خ', 'ظ', 'ي', 'ط', 'ف', 'ز', 'ب', 'ح']
+            },
+            {
+                color: '#ec1a4c',
+                letters: ['ء', 'ا']
+            }
+        ];
+
+        // সব অক্ষর একটি অ্যারেতে অবজেক্ট হিসেবে সাজানো
+        const allLetters = [];
+        colorGroups.forEach(group => {
+            group.letters.forEach(char => {
+                allLetters.push({ char: char, color: group.color });
+            });
+        });
+
+        // হিস্ট্রি এবং ট্র্যাকিং
+        let historyStack = [];
+        let currentIndex = -1;
+
+        const displayDiv = document.getElementById('letter-display');
+
+        // র্যান্ডম অক্ষর পাওয়ার ফাংশন
+        function getRandomLetter() {
+            const randomIndex = Math.floor(Math.random() * allLetters.length);
+            return allLetters[randomIndex];
+        }
+
+        // অক্ষর স্ক্রিনে দেখানোর ফাংশন
+        function showNextLetter() {
+            // যদি আমরা হিস্ট্রির মাঝখানে থাকি এবং নতুন হরফ চাই
+            if (currentIndex < historyStack.length - 1) {
+                currentIndex++;
+                renderLetter(historyStack[currentIndex]);
+            } else {
+                // নতুন র্যান্ডম হরফ যোগ করা
+                const newLetter = getRandomLetter();
+                historyStack.push(newLetter);
+                currentIndex++;
+                renderLetter(newLetter);
+            }
+        }
+
+        function showPreviousLetter() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderLetter(historyStack[currentIndex]);
+            }
+        }
+
+        function renderLetter(item) {
+            displayDiv.textContent = item.char;
+            displayDiv.style.color = item.color;
+        }
+
+        // শুরুতে প্রথম অক্ষর দেখানো
+        showNextLetter();
+
+        // ---------------- Touch Swipe Logic ----------------
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
+
+        function handleSwipe() {
+            const swipeDistance = touchEndX - touchStartX;
+            const threshold = 50; // সর্বনিম্ন সোয়াইপ দূরত্ব
+
+            // ডান থেকে বামে সোয়াইপ (Right to Left Slide) -> নতুন র্যান্ডম অক্ষর
+            if (swipeDistance < -threshold) {
+                showNextLetter();
+            }
+            // বাম থেকে ডানে সোয়াইপ (Left to Right Slide) -> পূর্ববর্তী অক্ষর
+            else if (swipeDistance > threshold) {
+                showPreviousLetter();
+            }
+        }
+
+        // ---------------- Keyboard Arrow Keys Logic ----------------
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') { // বাম অ্যারো মানে ডান থেকে বামে মুভ
+                showNextLetter();
+            } else if (e.key === 'ArrowRight') { // ডান অ্যারো মানে আগের হরফ
+                showPreviousLetter();
+            }
+        });
+    </script>
+</body>
+</html>
