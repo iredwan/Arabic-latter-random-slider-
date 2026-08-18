@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>আরবি হরফ ভিউয়ার</title>
+    <title>আরবি ২৯ হরফ ভিউয়ার</title>
     <style>
         @font-face {
             font-family: 'IqraArabicFont';
@@ -24,30 +24,51 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #121212; /* ডার্ক ব্যাকগ্রাউন্ড, চাইলে পরিবর্তন করতে পারেন */
+            background-color: #121212;
             overflow: hidden;
-            font-family: 'IqraArabicFont', 'Arial', sans-serif;
-            user-select: none; /* লেখার টেক্সট সিলেক্ট হওয়া বন্ধ রাখার জন্য */
-            touch-action: pan-y; /* স্লাইড স্মুথ করার জন্য */
+            font-family: 'IqraArabicFont', sans-serif;
+            user-select: none;
+            touch-action: pan-y;
         }
 
         #letter-display {
-            font-size: 45vh; /* স্ক্রিনের মেপে হরফের সাইজ বড় হবে */
+            font-size: 45vh;
             font-weight: bold;
-            transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
             text-align: center;
             line-height: 1;
+            transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+            will-change: transform, opacity;
         }
 
         /* স্লাইড অ্যানিমেশন ক্লাস */
-        .slide-out-left {
-            transform: translateX(-100vw);
-            opacity: 0;
+        .slide-from-right {
+            animation: slideInFromRight 0.3s forwards ease-out;
         }
 
-        .slide-out-right {
-            transform: translateX(100vw);
-            opacity: 0;
+        .slide-from-left {
+            animation: slideInFromLeft 0.3s forwards ease-out;
+        }
+
+        @keyframes slideInFromRight {
+            0% {
+                transform: translateX(100vw);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInFromLeft {
+            0% {
+                transform: translateX(-100vw);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
     </style>
 </head>
@@ -56,7 +77,7 @@
     <div id="letter-display"></div>
 
     <script>
-        // কালার অনুযায়ী অক্ষর গুলোর লিস্ট
+        // আপনার দেওয়া কালার কোড অনুযায়ী নিখুঁত ২৯টি আরবি হরফ
         const colorGroups = [
             {
                 color: '#4cb648',
@@ -72,54 +93,74 @@
             }
         ];
 
-        // সব অক্ষর একটি অ্যারেতে অবজেক্ট হিসেবে সাজানো
-        const allLetters = [];
+        // ২৯টি হরফ এক জায়গায় সংগ্রহ করা
+        const baseLetters = [];
         colorGroups.forEach(group => {
             group.letters.forEach(char => {
-                allLetters.push({ char: char, color: group.color });
+                baseLetters.push({ char: char, color: group.color });
             });
         });
 
-        // হিস্ট্রি এবং ট্র্যাকিং
+        // Fisher-Yates Shuffle অ্যালগরিদম দিয়ে ২৯টি হরফকে এলোমেলো করা
+        function shuffleArray(array) {
+            let shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // স্টেট ট্র্যাকিং
+        let currentPool = shuffleArray(baseLetters); // বর্তমান ২৯ হরফের র্যান্ডম пул
         let historyStack = [];
         let currentIndex = -1;
 
         const displayDiv = document.getElementById('letter-display');
 
-        // র্যান্ডম অক্ষর পাওয়ার ফাংশন
-        function getRandomLetter() {
-            const randomIndex = Math.floor(Math.random() * allLetters.length);
-            return allLetters[randomIndex];
-        }
-
-        // অক্ষর স্ক্রিনে দেখানোর ফাংশন
+        // ডান থেকে বামে স্লাইড (নতুন হরফ আসবে)
         function showNextLetter() {
-            // যদি আমরা হিস্ট্রির মাঝখানে থাকি এবং নতুন হরফ চাই
             if (currentIndex < historyStack.length - 1) {
+                // পূর্বে দেখা হিস্ট্রিতে সামনে যাওয়া
                 currentIndex++;
-                renderLetter(historyStack[currentIndex]);
+                renderLetter(historyStack[currentIndex], 'right');
             } else {
-                // নতুন র্যান্ডম হরফ যোগ করা
-                const newLetter = getRandomLetter();
-                historyStack.push(newLetter);
+                // ২৯টি হরফ শেষ হয়ে গেলে নতুন একটি র্যান্ডম রাউন্ড শুরু হবে
+                if (currentPool.length === 0) {
+                    currentPool = shuffleArray(baseLetters);
+                }
+
+                // একটি হরফ পুল থেকে নিয়ে দেখানো (যাতে এটি পুনরাবৃত্তি না হয়)
+                const nextLetter = currentPool.pop();
+                historyStack.push(nextLetter);
                 currentIndex++;
-                renderLetter(newLetter);
+                renderLetter(nextLetter, 'right');
             }
         }
 
+        // বাম থেকে ডানে স্লাইড (হিস্ট্রি বা আগের হরফে ফেরত)
         function showPreviousLetter() {
             if (currentIndex > 0) {
                 currentIndex--;
-                renderLetter(historyStack[currentIndex]);
+                renderLetter(historyStack[currentIndex], 'left');
             }
         }
 
-        function renderLetter(item) {
+        function renderLetter(item, direction) {
+            displayDiv.classList.remove('slide-from-right', 'slide-from-left');
+            void displayDiv.offsetWidth; // DOM Reflow Trigger
+
             displayDiv.textContent = item.char;
             displayDiv.style.color = item.color;
+
+            if (direction === 'right') {
+                displayDiv.classList.add('slide-from-right');
+            } else if (direction === 'left') {
+                displayDiv.classList.add('slide-from-left');
+            }
         }
 
-        // শুরুতে প্রথম অক্ষর দেখানো
+        // অ্যাপ চালু করার সময় প্রথম হরফ দিয়ে শুরু
         showNextLetter();
 
         // ---------------- Touch Swipe Logic ----------------
@@ -137,23 +178,20 @@
 
         function handleSwipe() {
             const swipeDistance = touchEndX - touchStartX;
-            const threshold = 50; // সর্বনিম্ন সোয়াইপ দূরত্ব
+            const threshold = 50; 
 
-            // ডান থেকে বামে সোয়াইপ (Right to Left Slide) -> নতুন র্যান্ডম অক্ষর
             if (swipeDistance < -threshold) {
-                showNextLetter();
-            }
-            // বাম থেকে ডানে সোয়াইপ (Left to Right Slide) -> পূর্ববর্তী অক্ষর
-            else if (swipeDistance > threshold) {
-                showPreviousLetter();
+                showNextLetter(); // ডান থেকে বামে সোয়াইপ (নতুন হরফ)
+            } else if (swipeDistance > threshold) {
+                showPreviousLetter(); // বাম থেকে ডানে সোয়াইপ (আগের ইতিহাস)
             }
         }
 
         // ---------------- Keyboard Arrow Keys Logic ----------------
         document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft') { // বাম অ্যারো মানে ডান থেকে বামে মুভ
+            if (e.key === 'ArrowLeft') { 
                 showNextLetter();
-            } else if (e.key === 'ArrowRight') { // ডান অ্যারো মানে আগের হরফ
+            } else if (e.key === 'ArrowRight') { 
                 showPreviousLetter();
             }
         });
