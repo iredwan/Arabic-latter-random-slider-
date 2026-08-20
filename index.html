@@ -1,200 +1,868 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IIM আরবি ২৯ হরফ ভিউয়ার</title>
+<!doctype html>
+<html lang="bn" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>আরবি হরফ ভিউয়ার</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Hind+Siliguri:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
-        @font-face {
-            font-family: 'IqraArabicFont';
-            src: url('../assets/fonts/CustomFont.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      @font-face {
+        font-family: "IqraArabicFont";
+        src: url("../assets/fonts/CustomFont.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
 
-        body {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #121212;
-            overflow: hidden;
-            font-family: 'IqraArabicFont', sans-serif;
-            user-select: none;
-            touch-action: pan-y;
-        }
+      :root {
+        --bg-color: #0f172a;
+        --panel-bg: rgba(30, 41, 59, 0.9);
+        --panel-border: rgba(255, 255, 255, 0.1);
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --text-highlight: #f59e0b;
+        --accent-blue: #60c9e6;
+      }
 
-        #letter-display {
-            font-size: 45vh;
-            font-weight: bold;
-            text-align: center;
-            line-height: 1;
-            transition: transform 0.25s ease-out, opacity 0.25s ease-out;
-            will-change: transform, opacity;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-        /* স্লাইড অ্যানিমেশন ক্লাস */
-        .slide-from-right {
-            animation: slideInFromRight 0.3s forwards ease-out;
-        }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        max-width: 100vw;
+        max-height: 100vh;
+        overflow: hidden;
+      }
 
-        .slide-from-left {
-            animation: slideInFromLeft 0.3s forwards ease-out;
-        }
+      body {
+        display: flex;
+        flex-direction: column;
+        background-color: var(--bg-color);
+        background-image: radial-gradient(
+          circle at 50% 30%,
+          #1e293b 0%,
+          #0f172a 70%
+        );
+        font-family: "Hind Siliguri", sans-serif;
+        user-select: none;
+        touch-action: pan-y;
+        color: var(--text-primary);
+      }
 
-        @keyframes slideInFromRight {
-            0% {
-                transform: translateX(100vw);
-                opacity: 0;
-            }
-            100% {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
+      /* ------------------- Top Bar ------------------- */
+      .topbar {
+        width: 100%;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: var(--panel-bg);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--panel-border);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        z-index: 200;
+        flex-shrink: 0;
+      }
 
-        @keyframes slideInFromLeft {
-            0% {
-                transform: translateX(-100vw);
-                opacity: 0;
-            }
-            100% {
-                transform: translateX(0);
-                opacity: 1;
-            }
+      .menu-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        border: 1px solid var(--panel-border);
+        background: rgba(15, 23, 42, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition:
+          border-color 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .menu-btn:hover,
+      .menu-btn:focus-visible {
+        border-color: var(--accent-blue);
+        background: rgba(96, 201, 230, 0.1);
+      }
+
+      .menu-btn svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--text-primary);
+      }
+
+      .topbar-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ------------------- Drawer ------------------- */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: 300;
+      }
+
+      .overlay.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: min(300px, 82vw);
+        background: #101c31;
+        border-left: 1px solid var(--panel-border);
+        box-shadow: -20px 0 40px rgba(0, 0, 0, 0.5);
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 400;
+        display: flex;
+        flex-direction: column;
+        padding: 22px 18px;
+        gap: 6px;
+      }
+
+      .drawer.open {
+        transform: translateX(0);
+      }
+
+      .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--panel-border);
+      }
+
+      .drawer-header h2 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .drawer-close {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        border: 1px solid var(--panel-border);
+        background: rgba(255, 255, 255, 0.03);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+
+      .drawer-close svg {
+        width: 16px;
+        height: 16px;
+        stroke: var(--text-secondary);
+      }
+
+      .drawer-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        color: var(--text-secondary);
+        font-size: 15.5px;
+        font-weight: 500;
+        background: transparent;
+        border: 1px solid transparent;
+        transition:
+          background 0.2s ease,
+          color 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .drawer-item .icon {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .drawer-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-primary);
+      }
+
+      .drawer-item.active {
+        background: rgba(96, 201, 230, 0.12);
+        border-color: rgba(96, 201, 230, 0.35);
+        color: var(--accent-blue);
+        font-weight: 700;
+      }
+
+      /* ------------------- Controls Panel (page 2 only) ------------------- */
+      .controls-container {
+        width: 100%;
+        padding: 14px 20px;
+        background: var(--panel-bg);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--panel-border);
+        display: none;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+        z-index: 100;
+        direction: ltr;
+        flex-shrink: 0;
+      }
+
+      .controls-container.visible {
+        display: flex;
+      }
+
+      .control-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+
+      .control-group label {
+        white-space: nowrap;
+      }
+
+      select {
+        padding: 8px 14px;
+        background-color: rgba(15, 23, 42, 0.8);
+        color: var(--text-primary);
+        border: 1px solid var(--panel-border);
+        border-radius: 8px;
+        font-family: "Hind Siliguri", sans-serif;
+        font-size: 15px;
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      select:focus,
+      select:hover {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 2px rgba(96, 201, 230, 0.2);
+      }
+
+      /* ------------------- Display Canvas Area ------------------- */
+      .display-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        position: relative;
+        padding: 20px;
+        overflow: hidden;
+      }
+
+      .question-box {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--panel-border);
+        backdrop-filter: blur(8px);
+        padding: 10px 24px;
+        border-radius: 30px;
+        font-size: clamp(18px, 3vh, 24px);
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 25px;
+        text-align: center;
+        direction: ltr;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        display: none;
+      }
+
+      .question-box.visible {
+        display: block;
+      }
+
+      #letter-display {
+        font-family: "IqraArabicFont", serif;
+        font-size: min(38vh, 310px);
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.1;
+        filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+
+      /* ------------------- Slide Animations ------------------- */
+      .slide-from-right {
+        animation: slideInFromRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .slide-from-left {
+        animation: slideInFromLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes slideInFromRight {
+        0% {
+          transform: translate3d(100%, 0, 0);
+          opacity: 0;
         }
+        100% {
+          transform: translate3d(0, 0, 0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideInFromLeft {
+        0% {
+          transform: translate3d(-100%, 0, 0);
+          opacity: 0;
+        }
+        100% {
+          transform: translate3d(0, 0, 0);
+          opacity: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .slide-from-right,
+        .slide-from-left,
+        .drawer,
+        .overlay {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <!-- Top Bar -->
+    <div class="topbar">
+      <button class="menu-btn" id="menu-toggle" aria-label="মেনু খুলুন">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <line x1="4" y1="6" x2="20" y2="6"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+          <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+      </button>
+      <div class="topbar-title" id="topbar-title">২৯ হরফ ভিউয়ার</div>
+    </div>
 
-    <div id="letter-display"></div>
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Drawer -->
+    <nav class="drawer" id="drawer" aria-label="সাইড মেনু">
+      <div class="drawer-header">
+        <h2>মেনু</h2>
+        <button
+          class="drawer-close"
+          id="drawer-close"
+          aria-label="মেনু বন্ধ করুন"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="drawer-item active" data-page="simple">
+        <span>হরফ স্লাইডার</span>
+      </div>
+      <div class="drawer-item" data-page="advanced">
+        <span>মুরাক্কাব স্লাইডার</span>
+      </div>
+    </nav>
+
+    <!-- Position filter / range controls: only shown on "advanced" page -->
+    <div class="controls-container" id="controls-container">
+      <div class="control-group">
+        <label for="start-letter">শুরু:</label>
+        <select id="start-letter"></select>
+      </div>
+
+      <div class="control-group">
+        <label for="end-letter">শেষ:</label>
+        <select id="end-letter"></select>
+      </div>
+
+      <div class="control-group">
+        <label for="position-filter">অবস্থান:</label>
+        <select id="position-filter">
+          <option value="all">সব অবস্থান (All)</option>
+          <option value="initial">শুরুর অবস্থান (Initial)</option>
+          <option value="medial">মাঝের অবস্থান (Medial)</option>
+          <option value="final">শেষের অবস্থান (Final)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Main Display Area (shared by both pages) -->
+    <div class="display-container">
+      <div class="question-box" id="question-box">
+        নিচে প্রদর্শিত হরফের নাম ও অবস্থান বলুন।
+      </div>
+      <div id="letter-display"></div>
+    </div>
 
     <script>
-        // আপনার দেওয়া কালার কোড অনুযায়ী নিখুঁত ২৯টি আরবি হরফ
-        const colorGroups = [
-            {
-                color: '#4cb648',
-                letters: ['ج', 'ذ', 'ض', 'ص', 'ن', 'م', 'غ', 'ع', 'و', 'ش', 'س', 'د', 'ل', 'ك', 'ق']
-            },
-            {
-                color: '#60c9e6',
-                letters: ['ث', 'ت', 'ر', 'ه', 'خ', 'ظ', 'ي', 'ط', 'ف', 'ز', 'ب', 'ح']
-            },
-            {
-                color: '#ec1a4c',
-                letters: ['ء', 'ا']
-            }
-        ];
+      // ==========================================================
+      // Shared base letter/color data (source of truth for both pages)
+      // ==========================================================
+      const arabicLetters = [
+        {
+          name: "ا",
+          color: "#ec1a4c",
+          forms: { initial: "ا", medial: "لا", final: "ـا" },
+        },
+        {
+          name: "ب",
+          color: "#60c9e6",
+          forms: { initial: "بـ", medial: "ـبـ", final: "ـب" },
+        },
+        {
+          name: "ت",
+          color: "#60c9e6",
+          forms: { initial: "تـ", medial: "ـتـ", final: "ـت" },
+        },
+        {
+          name: "ث",
+          color: "#60c9e6",
+          forms: { initial: "ثـ", medial: "ـثـ", final: "ـث" },
+        },
+        {
+          name: "ج",
+          color: "#4cb648",
+          forms: { initial: "جـ", medial: "ـجـ", final: "ـج" },
+        },
+        {
+          name: "ح",
+          color: "#60c9e6",
+          forms: { initial: "حـ", medial: "ـحـ", final: "ـح" },
+        },
+        {
+          name: "خ",
+          color: "#60c9e6",
+          forms: { initial: "خـ", medial: "ـخـ", final: "ـخ" },
+        },
+        {
+          name: "د",
+          color: "#4cb648",
+          forms: { initial: "د", medial: "ـد", final: "ـد" },
+        },
+        {
+          name: "ذ",
+          color: "#4cb648",
+          forms: { initial: "ذ", medial: "ـذ", final: "ـذ" },
+        },
+        {
+          name: "ر",
+          color: "#60c9e6",
+          forms: { initial: "ر", medial: "ـر", final: "ـر" },
+        },
+        {
+          name: "ز",
+          color: "#60c9e6",
+          forms: { initial: "ز", medial: "ـز", final: "ـز" },
+        },
+        {
+          name: "س",
+          color: "#4cb648",
+          forms: { initial: "سـ", medial: "ـسـ", final: "ـس" },
+        },
+        {
+          name: "ش",
+          color: "#4cb648",
+          forms: { initial: "شـ", medial: "ـشـ", final: "ـش" },
+        },
+        {
+          name: "ص",
+          color: "#4cb648",
+          forms: { initial: "صـ", medial: "ـصـ", final: "ـص" },
+        },
+        {
+          name: "ض",
+          color: "#4cb648",
+          forms: { initial: "ضـ", medial: "ـضـ", final: "ـض" },
+        },
+        {
+          name: "ط",
+          color: "#60c9e6",
+          forms: { initial: "طـ", medial: "ـطـ", final: "ـط" },
+        },
+        {
+          name: "ظ",
+          color: "#60c9e6",
+          forms: { initial: "ظـ", medial: "ـظـ", final: "ـظ" },
+        },
+        {
+          name: "ع",
+          color: "#4cb648",
+          forms: { initial: "عـ", medial: "ـعـ", final: "ـع" },
+        },
+        {
+          name: "غ",
+          color: "#4cb648",
+          forms: { initial: "غـ", medial: "ـغـ", final: "ـغ" },
+        },
+        {
+          name: "ف",
+          color: "#60c9e6",
+          forms: { initial: "فـ", medial: "ـفـ", final: "ـف" },
+        },
+        {
+          name: "ق",
+          color: "#4cb648",
+          forms: { initial: "قـ", medial: "ـقـ", final: "ـق" },
+        },
+        {
+          name: "ك",
+          color: "#4cb648",
+          forms: { initial: "كـ", medial: "ـكـ", final: "ـك" },
+        },
+        {
+          name: "ل",
+          color: "#4cb648",
+          forms: { initial: "لـ", medial: "ـلـ", final: "ـل" },
+        },
+        {
+          name: "م",
+          color: "#4cb648",
+          forms: { initial: "مـ", medial: "ـمـ", final: "ـم" },
+        },
+        {
+          name: "ن",
+          color: "#4cb648",
+          forms: { initial: "نـ", medial: "ـنـ", final: "ـن" },
+        },
+        {
+          name: "و",
+          color: "#4cb648",
+          forms: { initial: "و", medial: "ـو", final: "ـو" },
+        },
+        {
+          name: "ه",
+          color: "#60c9e6",
+          forms: { initial: "هـ", medial: "ـهـ", final: "ـه" },
+        },
+        {
+          name: "ء",
+          color: "#ec1a4c",
+          forms: { initial: "ء", medial: "ء", final: "ء" },
+        },
+        {
+          name: "ي",
+          color: "#60c9e6",
+          forms: { initial: "يـ", medial: "ـيـ", final: "ـي" },
+        },
+      ];
 
-        // ২৯টি হরফ এক জায়গায় সংগ্রহ করা
-        const baseLetters = [];
-        colorGroups.forEach(group => {
-            group.letters.forEach(char => {
-                baseLetters.push({ char: char, color: group.color });
-            });
+      function shuffleArray(array) {
+        let shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      }
+
+      // ==========================================================
+      // DOM references
+      // ==========================================================
+      const displayDiv = document.getElementById("letter-display");
+      const questionBox = document.getElementById("question-box");
+      const controlsContainer = document.getElementById("controls-container");
+      const topbarTitle = document.getElementById("topbar-title");
+
+      const menuToggle = document.getElementById("menu-toggle");
+      const drawer = document.getElementById("drawer");
+      const drawerClose = document.getElementById("drawer-close");
+      const overlay = document.getElementById("overlay");
+      const drawerItems = document.querySelectorAll(".drawer-item");
+
+      const startSelect = document.getElementById("start-letter");
+      const endSelect = document.getElementById("end-letter");
+      const positionSelect = document.getElementById("position-filter");
+
+      let currentPage = "simple"; // "simple" | "advanced"
+
+      // ==========================================================
+      // Drawer open/close logic
+      // ==========================================================
+      function openDrawer() {
+        drawer.classList.add("open");
+        overlay.classList.add("open");
+      }
+      function closeDrawer() {
+        drawer.classList.remove("open");
+        overlay.classList.remove("open");
+      }
+      menuToggle.addEventListener("click", openDrawer);
+      drawerClose.addEventListener("click", closeDrawer);
+      overlay.addEventListener("click", closeDrawer);
+
+      drawerItems.forEach((item) => {
+        item.addEventListener("click", () => {
+          drawerItems.forEach((i) => i.classList.remove("active"));
+          item.classList.add("active");
+          switchPage(item.dataset.page);
+          closeDrawer();
         });
+      });
 
-        // Fisher-Yates Shuffle অ্যালগরিদম দিয়ে ২৯টি হরফকে এলোমেলো করা
-        function shuffleArray(array) {
-            let shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
+      function switchPage(page) {
+        currentPage = page;
+        if (page === "simple") {
+          topbarTitle.textContent = "২৯ হরফ ভিউয়ার";
+          controlsContainer.classList.remove("visible");
+          questionBox.classList.remove("visible");
+          simple.reset();
+        } else {
+          topbarTitle.textContent = "মুরাক্কাব ভিউয়ার | Pro";
+          controlsContainer.classList.add("visible");
+          questionBox.classList.add("visible");
+          advanced.reset();
+        }
+      }
+
+      function renderLetter(char, color, direction) {
+        displayDiv.classList.remove("slide-from-right", "slide-from-left");
+        void displayDiv.offsetWidth; // reflow
+        displayDiv.textContent = char;
+        displayDiv.style.color = color;
+        if (direction === "right") displayDiv.classList.add("slide-from-right");
+        else if (direction === "left")
+          displayDiv.classList.add("slide-from-left");
+      }
+
+      // ==========================================================
+      // Page 1: Simple 29-letter viewer
+      // ==========================================================
+      const simple = (() => {
+        let pool = [];
+        let history = [];
+        let index = -1;
+
+        function reset() {
+          pool = shuffleArray(arabicLetters);
+          history = [];
+          index = -1;
+          next();
         }
 
-        // স্টেট ট্র্যাকিং
-        let currentPool = shuffleArray(baseLetters); // বর্তমান ২৯ হরফের র্যান্ডম пул
-        let historyStack = [];
-        let currentIndex = -1;
+        function next() {
+          if (index < history.length - 1) {
+            index++;
+            const item = history[index];
+            renderLetter(item.name, item.color, "right");
+            return;
+          }
+          if (pool.length === 0) pool = shuffleArray(arabicLetters);
+          const item = pool.pop();
+          history.push(item);
+          index++;
+          renderLetter(item.name, item.color, "right");
+        }
 
-        const displayDiv = document.getElementById('letter-display');
+        function prev() {
+          if (index > 0) {
+            index--;
+            const item = history[index];
+            renderLetter(item.name, item.color, "left");
+          }
+        }
 
-        // ডান থেকে বামে স্লাইড (নতুন হরফ আসবে)
-        function showNextLetter() {
-            if (currentIndex < historyStack.length - 1) {
-                // পূর্বে দেখা হিস্ট্রিতে সামনে যাওয়া
-                currentIndex++;
-                renderLetter(historyStack[currentIndex], 'right');
+        return { reset, next, prev };
+      })();
+
+      // ==========================================================
+      // Page 2: Advanced murakkab viewer with range + position filter
+      // ==========================================================
+      const advanced = (() => {
+        let pool = [];
+        let history = [];
+        let index = -1;
+
+        arabicLetters.forEach((item, i) => {
+          startSelect.add(new Option(item.name, i));
+          endSelect.add(new Option(item.name, i));
+        });
+        startSelect.value = 0;
+        endSelect.value = arabicLetters.length - 1;
+
+        const posNames = { initial: "শুরুর", medial: "মাঝের", final: "শেষের" };
+
+        function generatePool() {
+          let startIdx = parseInt(startSelect.value);
+          let endIdx = parseInt(endSelect.value);
+          if (startIdx > endIdx) [startIdx, endIdx] = [endIdx, startIdx];
+
+          const selectedLetters = arabicLetters.slice(startIdx, endIdx + 1);
+          const posFilter = positionSelect.value;
+          let list = [];
+
+          selectedLetters.forEach((item) => {
+            if (posFilter === "all") {
+              Object.keys(item.forms).forEach((pos) => {
+                list.push({
+                  baseLetter: item.name,
+                  char: item.forms[pos],
+                  color: item.color,
+                  posName: posNames[pos],
+                });
+              });
             } else {
-                // ২৯টি হরফ শেষ হয়ে গেলে নতুন একটি র্যান্ডম রাউন্ড শুরু হবে
-                if (currentPool.length === 0) {
-                    currentPool = shuffleArray(baseLetters);
-                }
-
-                // একটি হরফ পুল থেকে নিয়ে দেখানো (যাতে এটি পুনরাবৃত্তি না হয়)
-                const nextLetter = currentPool.pop();
-                historyStack.push(nextLetter);
-                currentIndex++;
-                renderLetter(nextLetter, 'right');
+              list.push({
+                baseLetter: item.name,
+                char: item.forms[posFilter],
+                color: item.color,
+                posName: posNames[posFilter],
+              });
             }
+          });
+
+          return shuffleArray(list);
         }
 
-        // বাম থেকে ডানে স্লাইড (হিস্ট্রি বা আগের হরফে ফেরত)
-        function showPreviousLetter() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                renderLetter(historyStack[currentIndex], 'left');
-            }
+        function reset() {
+          pool = generatePool();
+          history = [];
+          index = -1;
+          next();
         }
 
-        function renderLetter(item, direction) {
-            displayDiv.classList.remove('slide-from-right', 'slide-from-left');
-            void displayDiv.offsetWidth; // DOM Reflow Trigger
-
-            displayDiv.textContent = item.char;
-            displayDiv.style.color = item.color;
-
-            if (direction === 'right') {
-                displayDiv.classList.add('slide-from-right');
-            } else if (direction === 'left') {
-                displayDiv.classList.add('slide-from-left');
-            }
+        function next() {
+          if (index < history.length - 1) {
+            index++;
+            const item = history[index];
+            renderLetter(item.char, item.color, "right");
+            return;
+          }
+          if (pool.length === 0) pool = generatePool();
+          const item = pool.pop();
+          history.push(item);
+          index++;
+          renderLetter(item.char, item.color, "right");
         }
 
-        // অ্যাপ চালু করার সময় প্রথম হরফ দিয়ে শুরু
-        showNextLetter();
-
-        // ---------------- Touch Swipe Logic ----------------
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        document.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
-        }, false);
-
-        document.addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        }, false);
-
-        function handleSwipe() {
-            const swipeDistance = touchEndX - touchStartX;
-            const threshold = 50; 
-
-            if (swipeDistance < -threshold) {
-                showNextLetter(); // ডান থেকে বামে সোয়াইপ (নতুন হরফ)
-            } else if (swipeDistance > threshold) {
-                showPreviousLetter(); // বাম থেকে ডানে সোয়াইপ (আগের ইতিহাস)
-            }
+        function prev() {
+          if (index > 0) {
+            index--;
+            const item = history[index];
+            renderLetter(item.char, item.color, "left");
+          }
         }
 
-        // ---------------- Keyboard Arrow Keys Logic ----------------
-        document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft') { 
-                showNextLetter();
-            } else if (e.key === 'ArrowRight') { 
-                showPreviousLetter();
-            }
-        });
+        startSelect.addEventListener("change", reset);
+        endSelect.addEventListener("change", reset);
+        positionSelect.addEventListener("change", reset);
+
+        return { reset, next, prev };
+      })();
+
+      // ==========================================================
+      // Shared swipe + keyboard navigation, routed to active page
+      // ==========================================================
+      function goNext() {
+        (currentPage === "simple" ? simple : advanced).next();
+      }
+      function goPrev() {
+        (currentPage === "simple" ? simple : advanced).prev();
+      }
+
+      let touchStartX = 0;
+      let touchEndX = 0;
+
+      document.addEventListener(
+        "touchstart",
+        (e) => {
+          if (
+            e.target.closest(".controls-container") ||
+            e.target.closest(".drawer") ||
+            e.target.closest(".topbar")
+          )
+            return;
+          touchStartX = e.changedTouches[0].screenX;
+        },
+        false,
+      );
+
+      document.addEventListener(
+        "touchend",
+        (e) => {
+          if (
+            e.target.closest(".controls-container") ||
+            e.target.closest(".drawer") ||
+            e.target.closest(".topbar")
+          )
+            return;
+          touchEndX = e.changedTouches[0].screenX;
+          handleSwipe();
+        },
+        false,
+      );
+
+      function handleSwipe() {
+        const swipeDistance = touchEndX - touchStartX;
+        const threshold = 40;
+        if (swipeDistance < -threshold) goNext();
+        else if (swipeDistance > threshold) goPrev();
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeDrawer();
+          return;
+        }
+        if (e.key === "ArrowLeft") goNext();
+        else if (e.key === "ArrowRight") goPrev();
+      });
+
+      // ==========================================================
+      // App start
+      // ==========================================================
+      simple.reset();
     </script>
-</body>
+  </body>
 </html>
